@@ -40,6 +40,17 @@ function createWindow(): void {
         mainWindow?.show();
     });
 
+    // Prevent window title from showing dimensions on resize
+    mainWindow.on('page-title-updated', (e) => {
+        e.preventDefault();
+    });
+
+    mainWindow.on('resize', () => {
+        if (mainWindow?.getTitle() !== 'AI Browser Agent') {
+            mainWindow?.setTitle('AI Browser Agent');
+        }
+    });
+
     mainWindow.webContents.setWindowOpenHandler(({ url }: { url: string }) => {
         shell.openExternal(url);
         return { action: 'deny' };

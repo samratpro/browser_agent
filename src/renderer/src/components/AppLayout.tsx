@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import { useTheme } from '../context/ThemeContext';
@@ -7,8 +7,21 @@ export default function AppLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const { theme, toggleTheme } = useTheme();
 
+    useEffect(() => {
+        const handleResize = () => {
+            // Some dev tools or scripts might update title with "width x height"
+            // We forcefully reset it to keep the UI clean.
+            if (document.title !== 'AI Browser Agent') {
+                document.title = 'AI Browser Agent';
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', position: 'relative' }}>
             {/* Custom Titlebar */}
             <div className="titlebar">
                 <div style={{ flex: 1 }} />
