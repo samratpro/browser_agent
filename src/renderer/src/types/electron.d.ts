@@ -60,8 +60,26 @@ export interface ElectronAPI {
     // External links
     openExternal: (url: string) => Promise<void>;
 
+    // Native dialogs
+    openFolderDialog: (defaultPath?: string) => Promise<string | null>;
+
     // Task control
-    runTask: (params: { prompt: string; url?: string; email?: string; password?: string; twoFactorCode?: string }) => Promise<{ taskId: string }>;
+    runTask: (params: {
+        prompt: string;
+        url?: string;
+        email?: string;
+        password?: string;
+        twoFactorCode?: string;
+        browserConfig?: {
+            browserType?: string;
+            headless?: boolean;
+            profileName?: string;
+            proxy?: { server: string; username?: string; password?: string };
+            debugPort?: number;
+        };
+        resourceFolder?: string;
+    }) => Promise<{ taskId: string }>;
+    interruptTask: (taskId: string, message: string) => Promise<void>;
     pauseTask: (taskId: string) => Promise<void>;
     resumeTask: (taskId: string) => Promise<void>;
     stopTask: (taskId: string) => Promise<void>;
@@ -90,6 +108,12 @@ export interface ElectronAPI {
     deleteSchedule: (id: string) => Promise<void>;
     getScheduleRuns: (scheduleId: string) => Promise<ScheduleRun[]>;
 
+    // App Settings (JSON file)
+    settingsGetAll: () => Promise<Record<string, string | undefined>>;
+    settingsSet: (key: string, value: string | null) => Promise<void>;
+    settingsGetProfileBaseDir: () => Promise<string | null>;
+    settingsSetProfileBaseDir: (dir: string | null) => Promise<void>;
+
     // Settings / API Key
     setApiKey: (apiKey: string) => Promise<void>;
 
@@ -97,6 +121,12 @@ export interface ElectronAPI {
     getCredentials: () => Promise<Credential[]>;
     addCredential: (data: AddCredentialParams) => Promise<string>;
     deleteCredential: (id: string) => Promise<void>;
+
+    // Browser Profile Setup
+    setupBrowserProfile: (profileName: string, url?: string) => Promise<{ success: boolean; profilePath: string }>;
+    listBrowserProfiles: () => Promise<Array<{ name: string; path: string; createdAt: number }>>;
+    deleteBrowserProfile: (profileName: string) => Promise<void>;
+    getBrowserProfilesDir: () => Promise<string>;
 
     // ── Push event listeners (clean-up functions returned) ──────
 

@@ -2,6 +2,7 @@ import EventEmitter from 'events';
 import { v4 as uuidv4 } from 'uuid';
 import {
     AgentState,
+    BrowserConfig,
     Task,
     TaskCredentials,
     TaskIntent,
@@ -52,6 +53,7 @@ export class AgentController extends EventEmitter {
         prompt: string,
         targetUrl: string,
         credentials: TaskCredentials = {},
+        browserConfig?: BrowserConfig,
     ): Promise<void> {
         const ctx = new AgentContext(taskId, prompt, credentials);
         this.contexts.set(taskId, ctx);
@@ -105,7 +107,7 @@ export class AgentController extends EventEmitter {
                 ctx.selectorMap = existingPattern.selectorMap;
                 ctx.buildGraph(existingPattern.actions);
 
-                await engine.launch();
+                await engine.launch(browserConfig);
                 ctx.transition(AgentState.EXECUTING);
                 this.emitStateChange(ctx);
                 this.persistTaskState(ctx);
@@ -123,7 +125,7 @@ export class AgentController extends EventEmitter {
                 this.emitStateChange(ctx);
                 this.appendLog(taskId, 'info', 'No pattern found. Entering exploration mode...');
 
-                await engine.launch();
+                await engine.launch(browserConfig);
 
                 // Navigate to target URL first
                 ctx.buildGraph([{ type: 'navigate', url: targetUrl }]);
@@ -285,7 +287,14 @@ export class AgentController extends EventEmitter {
         this.resumeTask(taskId);
     }
 
-    // ─── Wait helper ──────────────────────────────────────────
+    interruptTask(taskId: string, message: string): void {
+        const ctx = this.contexts.get(taskId);
+        if (!ctx) return;
+        ctx.interrupts.interruptMessage = message;
+        this.appendLog(taskId, 'info', `[User Interrupt] ${message}`);
+    }
+
+        // ─── Wait helper ──────────────────────────────────────────
 
     private async waitForResume(ctx: AgentContext): Promise<void> {
         while (

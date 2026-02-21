@@ -5,6 +5,7 @@ node_modules/
 out/
 dist/
 dist-electron/
+ts_playwright_browser_manager/
 
 # Vite cache
 .vite/

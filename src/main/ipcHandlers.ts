@@ -1,10 +1,12 @@
-import { IpcMain, shell, BrowserWindow } from 'electron';
+import { IpcMain, shell, BrowserWindow, dialog, app } from 'electron';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentController } from './agent/AgentController';
 import { DatabaseService } from './db/DatabaseService';
 import { CredentialService } from './db/CredentialService';
 import { PatternRepository } from './db/PatternRepository';
-import { AgentState, TaskIntent } from '../shared/types/AgentTypes';
+import { BrowserProfileService } from './agent/BrowserProfileService';
+import { SettingsStore } from './SettingsStore';
+import { BrowserConfig } from '../shared/types/AgentTypes';
 
 // ─── All IPC Handler Registration ────────────────────────────
 
@@ -15,6 +17,9 @@ export function registerIpcHandlers(
     credentialService: CredentialService,
     patternRepo: PatternRepository,
 ): void {
+
+    // JSON settings file — persisted at userData/settings.json
+    const settings = new SettingsStore();
 
     // ── Window Controls ─────────────────────────────────────────
 
@@ -52,7 +57,42 @@ export function registerIpcHandlers(
         shell.openExternal(url);
     });
 
+    // ── Native Folder Dialog ────────────────────────────────────
+
+    ipcMain.handle('dialog:openFolder', async (_event, defaultPath?: string) => {
+        const win = BrowserWindow.getFocusedWindow();
+        const result = await dialog.showOpenDialog(win ?? BrowserWindow.getAllWindows()[0], {
+            properties: ['openDirectory', 'createDirectory'],
+            defaultPath: defaultPath ?? app.getPath('documents'),
+        });
+        if (result.canceled || !result.filePaths.length) return null;
+        return result.filePaths[0];
+    });
+
+    // ── Browser Profile Settings (JSON file) ───────────────────
+
+    ipcMain.handle('settings:getProfileBaseDir', () => {
+        return settings.get('profileBaseDir');
+    });
+
+    ipcMain.handle('settings:setProfileBaseDir', (_event, dir: string | null) => {
+        settings.set('profileBaseDir', dir);
+    });
+
+    ipcMain.handle('settings:getAll', () => {
+        return settings.getAll();
+    });
+
+    ipcMain.handle('settings:set', (_event, key: string, value: string | null) => {
+        settings.set(key, value);
+    });
+
     // ── Task Control ────────────────────────────────────────────
+
+    // Helper: resolve BrowserProfileService using the user-configured base dir
+    const getBrowserProfileService = () => {
+        return new BrowserProfileService(settings.get('profileBaseDir') ?? undefined);
+    };
 
     ipcMain.handle('task:run', async (_event, params: {
         prompt: string;
@@ -60,10 +100,37 @@ export function registerIpcHandlers(
         email?: string;
         password?: string;
         twoFactorCode?: string;
+        browserConfig?: {
+            browserType?: string;
+            headless?: boolean;
+            profileName?: string;
+            proxy?: { server: string; username?: string; password?: string };
+            debugPort?: number;
+        };
+        resourceFolder?: string;
     }) => {
-        const { prompt, url, email, password, twoFactorCode } = params;
+        const { prompt, url, email, password, twoFactorCode, browserConfig: rawConfig, resourceFolder } = params;
         let domain = '';
         try { domain = new URL(url).hostname; } catch { domain = url; }
+
+        // Resolve profile path from profile name using the configured base dir
+        let resolvedConfig: BrowserConfig | undefined;
+        if (rawConfig) {
+            const svc = getBrowserProfileService();
+            resolvedConfig = {
+                browserType: (rawConfig.browserType as BrowserConfig['browserType']) ?? 'chromium',
+                headless: rawConfig.headless,
+                profileName: rawConfig.profileName,
+                profilePath: rawConfig.profileName?.trim()
+                    ? svc.getProfilePath(rawConfig.profileName.trim())
+                    : undefined,
+                proxy: rawConfig.proxy,
+                debugPort: rawConfig.debugPort,
+                resourceFolder,
+            };
+        } else if (resourceFolder) {
+            resolvedConfig = { resourceFolder };
+        }
 
         const taskId = agentController.createTaskRecord(prompt, domain, {
             url, email, password, twoFactorCode,
@@ -72,9 +139,13 @@ export function registerIpcHandlers(
         // Run non-blocking
         void agentController.runTask(taskId, prompt, url, {
             url, email, password, twoFactorCode,
-        });
+        }, resolvedConfig);
 
         return { taskId };
+    });
+
+    ipcMain.handle('task:interrupt', (_event, taskId: string, message: string) => {
+        agentController.interruptTask(taskId, message);
     });
 
     ipcMain.handle('task:pause', (_event, taskId: string) => {
@@ -148,7 +219,6 @@ export function registerIpcHandlers(
     });
 
     ipcMain.handle('pattern:forceRelearn', (_event, id: string) => {
-        // Disable the pattern so the controller picks EXPLORATION mode next run
         patternRepo.setDisabled(id, true);
         return true;
     });
@@ -222,5 +292,24 @@ export function registerIpcHandlers(
     ipcMain.handle('credentials:delete', async (_event, id: string) => {
         await credentialService.deletePassword(id);
         db.run('DELETE FROM credentials WHERE id = ?', [id]);
+    });
+
+    // ── Browser Profile Setup ────────────────────────────────────
+
+    ipcMain.handle('browser:setupProfile', async (_event, profileName: string, url?: string) => {
+        return getBrowserProfileService().setupProfile(profileName, url);
+    });
+
+    ipcMain.handle('browser:listProfiles', () => {
+        return getBrowserProfileService().listProfiles();
+    });
+
+    ipcMain.handle('browser:deleteProfile', (_event, profileName: string) => {
+        getBrowserProfileService().deleteProfile(profileName);
+        return true;
+    });
+
+    ipcMain.handle('browser:getProfilesDir', () => {
+        return getBrowserProfileService().getBaseDir();
     });
 }

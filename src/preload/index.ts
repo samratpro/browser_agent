@@ -17,6 +17,10 @@ const customAPI = {
     // ── External Links ─────────────────────────────────────────
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
 
+    // ── Native Dialogs ─────────────────────────────────────────
+    openFolderDialog: (defaultPath?: string) =>
+        ipcRenderer.invoke('dialog:openFolder', defaultPath),
+
     // ── Task Control ───────────────────────────────────────────
     runTask: (params: {
         prompt: string;
@@ -24,7 +28,18 @@ const customAPI = {
         email?: string;
         password?: string;
         twoFactorCode?: string;
+        browserConfig?: {
+            browserType?: string;
+            headless?: boolean;
+            profileName?: string;
+            proxy?: { server: string; username?: string; password?: string };
+            debugPort?: number;
+        };
+        resourceFolder?: string;
     }) => ipcRenderer.invoke('task:run', params),
+
+    interruptTask: (taskId: string, message: string) =>
+        ipcRenderer.invoke('task:interrupt', taskId, message),
 
     pauseTask: (taskId: string) => ipcRenderer.invoke('task:pause', taskId),
     resumeTask: (taskId: string) => ipcRenderer.invoke('task:resume', taskId),
@@ -56,12 +71,29 @@ const customAPI = {
     deleteSchedule: (id: string) => ipcRenderer.invoke('schedule:delete', id),
     getScheduleRuns: (scheduleId: string) => ipcRenderer.invoke('schedule:getRuns', scheduleId),
 
+    // ── App Settings (JSON file) ───────────────────────────────
+    settingsGetAll: () => ipcRenderer.invoke('settings:getAll'),
+    settingsSet: (key: string, value: string | null) =>
+        ipcRenderer.invoke('settings:set', key, value),
+    settingsGetProfileBaseDir: () => ipcRenderer.invoke('settings:getProfileBaseDir'),
+    settingsSetProfileBaseDir: (dir: string | null) =>
+        ipcRenderer.invoke('settings:setProfileBaseDir', dir),
+
     // ── Settings / Credentials ─────────────────────────────────
     setApiKey: (apiKey: string) => ipcRenderer.invoke('settings:setApiKey', apiKey),
     getCredentials: () => ipcRenderer.invoke('credentials:getAll'),
     addCredential: (data: { domain: string; label: string; username: string; password: string }) =>
         ipcRenderer.invoke('credentials:add', data),
     deleteCredential: (id: string) => ipcRenderer.invoke('credentials:delete', id),
+
+    // ── Browser Profile Setup ──────────────────────────────────
+    // Launches the system browser with a persistent profile so the user
+    // can log in manually. Resolves when the browser is closed — session saved.
+    setupBrowserProfile: (profileName: string, url?: string) =>
+        ipcRenderer.invoke('browser:setupProfile', profileName, url),
+    listBrowserProfiles: () => ipcRenderer.invoke('browser:listProfiles'),
+    deleteBrowserProfile: (profileName: string) => ipcRenderer.invoke('browser:deleteProfile', profileName),
+    getBrowserProfilesDir: () => ipcRenderer.invoke('browser:getProfilesDir'),
 
     // ── Realtime event listeners ───────────────────────────────
     onTaskUpdate: (callback: (event: unknown) => void) => {

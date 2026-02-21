@@ -238,6 +238,25 @@ export interface RecoveryResult {
     strategy: 'fuzzy' | 'text' | 'fingerprint' | 'ai' | 'none';
 }
 
+
+// ─── Browser Config ──────────────────────────────────────────
+
+export type BrowserLaunchType = 'chrome' | 'edge' | 'brave' | 'chromium' | 'comet';
+
+export interface BrowserConfig {
+    browserType?: BrowserLaunchType;
+    headless?: boolean;
+    profileName?: string;
+    profilePath?: string; // resolved absolute path, set by ipcHandlers via BrowserProfileService
+    resourceFolder?: string; // folder for input/output files
+    proxy?: {
+        server: string;
+        username?: string;
+        password?: string;
+    };
+    debugPort?: number;
+}
+
 // ─── Dashboard Stats ─────────────────────────────────────────
 
 export interface DashboardStats {

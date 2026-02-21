@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Task, AgentState } from '../../../shared/types/AgentTypes';
+import BrowserSetupModal from '../components/BrowserSetupModal';
 
 function getStateBadgeClass(state: AgentState): string {
     const map: Record<string, string> = {
@@ -35,6 +36,19 @@ export default function TasksPage() {
     const [showOptional, setShowOptional] = useState(false);
     const [isSchedule, setIsSchedule] = useState(false);
     const [running, setRunning] = useState(false);
+
+    // Browser config
+    const [showBrowserConfig, setShowBrowserConfig] = useState(false);
+    const [browserType, setBrowserType] = useState('chromium');
+    const [headless, setHeadless] = useState(false);
+    const [profileName, setProfileName] = useState('');
+    const [useProxy, setUseProxy] = useState(false);
+    const [proxyServer, setProxyServer] = useState('');
+    const [proxyUser, setProxyUser] = useState('');
+    const [proxyPass, setProxyPass] = useState('');
+    const [showSetupModal, setShowSetupModal] = useState(false);
+    const [resourceFolder, setResourceFolder] = useState('');
+
     const promptRef = useRef<HTMLTextAreaElement>(null);
 
     const loadTasks = async () => {
@@ -57,7 +71,21 @@ export default function TasksPage() {
         if (!prompt.trim()) { promptRef.current?.focus(); return; }
         setRunning(true);
         try {
-            await window.electronAPI.runTask({ prompt, url, email, password, twoFactorCode: twoFA });
+            const browserConfig = showBrowserConfig ? {
+                browserType,
+                headless,
+                profileName: profileName.trim() || undefined,
+                proxy: useProxy && proxyServer.trim() ? {
+                    server: proxyServer.trim(),
+                    username: proxyUser.trim() || undefined,
+                    password: proxyPass.trim() || undefined,
+                } : undefined,
+            } : undefined;
+            await window.electronAPI.runTask({
+                prompt, url, email, password, twoFactorCode: twoFA,
+                browserConfig,
+                resourceFolder: resourceFolder.trim() || undefined,
+            });
             setPrompt(''); setUrl(''); setEmail(''); setPassword(''); setTwoFA('');
             await loadTasks();
         } catch (e) {
@@ -116,14 +144,14 @@ export default function TasksPage() {
                     />
                 </div>
 
-                {/* Optional fields toggle */}
+                {/* Login fields toggle */}
                 <button
                     type="button"
                     className="btn btn-secondary btn-sm"
                     style={{ marginBottom: 12 }}
                     onClick={() => setShowOptional((v) => !v)}
                 >
-                    {showOptional ? '▲' : '▼'} {showOptional ? 'Hide' : 'Show'} login fields
+                    {showOptional ? '▲ Hide' : '▼ Show'} login fields
                 </button>
 
                 {showOptional && (
@@ -142,6 +170,139 @@ export default function TasksPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Browser Config toggle */}
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ marginBottom: 12 }}
+                    onClick={() => setShowBrowserConfig((v) => !v)}
+                >
+                    {showBrowserConfig ? '▲ Hide' : '⚙ Browser Config'}
+                </button>
+
+                {showBrowserConfig && (
+                    <div style={{
+                        border: '1px solid var(--border)', borderRadius: 'var(--radius-md)',
+                        padding: 16, marginBottom: 14, background: 'var(--bg-elevated)',
+                    }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                            {/* Browser Type */}
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Browser</label>
+                                <select
+                                    className="form-select"
+                                    value={browserType}
+                                    onChange={(e) => setBrowserType(e.target.value)}
+                                >
+                                    <option value="chromium">Chromium (built-in)</option>
+                                    <option value="chrome">Google Chrome</option>
+                                    <option value="edge">Microsoft Edge</option>
+                                    <option value="brave">Brave</option>
+                                    <option value="comet">Comet</option>
+                                </select>
+                            </div>
+                            {/* Profile Name */}
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Profile Name (optional)</label>
+                                <input
+                                    className="form-input"
+                                    placeholder="e.g. default, work, personal"
+                                    value={profileName}
+                                    onChange={(e) => setProfileName(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Headless + Proxy toggles */}
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 12, flexWrap: 'wrap' }}>
+                            <label className="toggle">
+                                <input type="checkbox" checked={headless} onChange={(e) => setHeadless(e.target.checked)} />
+                                <div className="toggle-track"><div className="toggle-thumb" /></div>
+                                <span className="toggle-label">Headless Mode</span>
+                            </label>
+                            <label className="toggle">
+                                <input type="checkbox" checked={useProxy} onChange={(e) => setUseProxy(e.target.checked)} />
+                                <div className="toggle-track"><div className="toggle-thumb" /></div>
+                                <span className="toggle-label">Use Proxy</span>
+                            </label>
+                        </div>
+
+                        {/* Proxy fields */}
+                        {useProxy && (
+                            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Proxy Server</label>
+                                    <input
+                                        className="form-input"
+                                        placeholder="http://proxy.example.com:8080"
+                                        value={proxyServer}
+                                        onChange={(e) => setProxyServer(e.target.value)}
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Username</label>
+                                    <input className="form-input" placeholder="username" value={proxyUser} onChange={(e) => setProxyUser(e.target.value)} />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Password</label>
+                                    <input type="password" className="form-input" placeholder="••••••••" value={proxyPass} onChange={(e) => setProxyPass(e.target.value)} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Browser Setup divider */}
+                        <div style={{
+                            paddingTop: 12, borderTop: '1px solid var(--border)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                        }}>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                                Log in or configure the browser manually before running.
+                            </span>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{ flexShrink: 0 }}
+                                onClick={() => setShowSetupModal(true)}
+                            >
+                                🌐 Open Browser for Setup
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Resource Folder */}
+                <div className="form-group" style={{ marginBottom: 14 }}>
+                    <label className="form-label">Resource Folder (optional)</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                            className="form-input"
+                            placeholder="Folder for input files and task output..."
+                            value={resourceFolder}
+                            onChange={(e) => setResourceFolder(e.target.value)}
+                            style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                        />
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ flexShrink: 0 }}
+                            onClick={async () => {
+                                const dir = await window.electronAPI.openFolderDialog(resourceFolder || undefined);
+                                if (dir) setResourceFolder(dir);
+                            }}
+                        >
+                            Browse...
+                        </button>
+                        {resourceFolder && (
+                            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setResourceFolder('')}>✕</button>
+                        )}
+                    </div>
+                    {resourceFolder && (
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
+                            {resourceFolder}
+                        </div>
+                    )}
+                </div>
 
                 <div className="btn-row">
                     <button className="btn btn-primary" onClick={handleRunTask} disabled={running || !prompt.trim()}>
@@ -235,6 +396,16 @@ export default function TasksPage() {
                     </tbody>
                 </table>
             </div>
+
+            {/* Browser Profile Setup Modal */}
+            {showSetupModal && (
+                <BrowserSetupModal
+                    defaultProfileName={profileName}
+                    defaultUrl={url}
+                    onClose={() => setShowSetupModal(false)}
+                    onProfileSaved={(name) => { setProfileName(name); }}
+                />
+            )}
         </div>
     );
 }

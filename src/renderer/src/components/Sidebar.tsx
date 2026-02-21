@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { Task, AgentState } from '../../../shared/types/AgentTypes';
 
 interface NavItem {
     path: string;
@@ -18,6 +19,14 @@ const NAV_ITEMS: NavItem[] = [
     { path: '/settings', icon: '⚙', label: 'Settings' },
 ];
 
+function taskStateDot(state: AgentState): string {
+    if ([AgentState.PLANNING, AgentState.EXPLORING, AgentState.LEARNING, AgentState.EXECUTING].includes(state)) return 'dot-running';
+    if (state === AgentState.COMPLETED) return 'dot-success';
+    if (state === AgentState.FAILED) return 'dot-failed';
+    if (state === AgentState.PAUSED || state === AgentState.WAITING_USER) return 'dot-paused';
+    return 'dot-idle';
+}
+
 export default function Sidebar({ collapsed, onToggle }: {
     collapsed: boolean;
     onToggle: () => void;
@@ -25,11 +34,26 @@ export default function Sidebar({ collapsed, onToggle }: {
     const { logout, user } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const location = useLocation();
+    const navigate = useNavigate();
+    const [tasks, setTasks] = useState<Task[]>([]);
 
     const isActive = (path: string) => {
         if (path === '/') return location.pathname === '/';
         return location.pathname.startsWith(path);
     };
+
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const data = await window.electronAPI.getTasks();
+                setTasks((data as Task[]).slice(0, 8));
+            } catch { /* ignore */ }
+        };
+        load();
+        const iv = setInterval(load, 3000);
+        const unsub = window.electronAPI.onTaskUpdate(() => load());
+        return () => { clearInterval(iv); unsub(); };
+    }, []);
 
     return (
         <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
@@ -53,6 +77,28 @@ export default function Sidebar({ collapsed, onToggle }: {
                         {!collapsed && <span>{item.label}</span>}
                     </NavLink>
                 ))}
+
+                {/* Task List */}
+                {tasks.length > 0 && (
+                    <div className="sidebar-task-section">
+                        {!collapsed && (
+                            <div className="sidebar-task-header">Recent Tasks</div>
+                        )}
+                        {tasks.map((task) => (
+                            <button
+                                key={task.id}
+                                className="sidebar-task-item"
+                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                title={task.name}
+                            >
+                                <span className={`task-status-dot ${taskStateDot(task.state)}`} />
+                                {!collapsed && (
+                                    <span className="sidebar-task-name">{task.name}</span>
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </nav>
 
             {/* Bottom actions */}

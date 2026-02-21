@@ -18,6 +18,10 @@ export default function SettingsPage() {
     const [apiKeySaved, setApiKeySaved] = useState(false);
     const [credentials, setCredentials] = useState<Credential[]>([]);
 
+    // Browser settings
+    const [profileBaseDir, setProfileBaseDir] = useState('');
+    const [profileBaseDirSaved, setProfileBaseDirSaved] = useState(false);
+
     // New credential form
     const [credDomain, setCredDomain] = useState('');
     const [credLabel, setCredLabel] = useState('');
@@ -30,7 +34,13 @@ export default function SettingsPage() {
         setCredentials(data as Credential[]);
     };
 
-    useEffect(() => { loadCredentials(); }, []);
+    useEffect(() => {
+        loadCredentials();
+        // Load saved settings from JSON file
+        window.electronAPI.settingsGetAll().then((s) => {
+            if (s.profileBaseDir) setProfileBaseDir(s.profileBaseDir);
+        });
+    }, []);
 
     const saveApiKey = async () => {
         if (!apiKey.trim()) return;
@@ -59,13 +69,24 @@ export default function SettingsPage() {
         await loadCredentials();
     };
 
+    const browseProfileDir = async () => {
+        const dir = await window.electronAPI.openFolderDialog(profileBaseDir || undefined);
+        if (dir) setProfileBaseDir(dir);
+    };
+
+    const saveProfileBaseDir = async () => {
+        await window.electronAPI.settingsSetProfileBaseDir(profileBaseDir.trim() || null);
+        setProfileBaseDirSaved(true);
+        setTimeout(() => setProfileBaseDirSaved(false), 3000);
+    };
+
     const openExternal = (url: string) => {
         if (window.electronAPI) window.electronAPI.openExternal(url);
         else window.open(url, '_blank');
     };
 
     return (
-        <div className="page animate-fade-in" style={{ maxWidth: 680, margin: '0 auto' }}>
+        <div className="page animate-fade-in">
             <div className="page-header">
                 <h1 className="page-title">Settings</h1>
                 <p className="page-subtitle">Configure your automation engine</p>
@@ -146,6 +167,43 @@ export default function SettingsPage() {
                 >
                     Get API key from OpenAI →
                 </button>
+            </div>
+
+            {/* Browser Settings */}
+            <div className="card" style={{ marginBottom: 20 }}>
+                <div className="card-title" style={{ marginBottom: 4 }}>Browser Settings</div>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 14 }}>
+                    Configure where browser profiles are stored. Leave blank to use the default location inside app data.
+                </p>
+                <div className="form-group" style={{ marginBottom: 10 }}>
+                    <label className="form-label">Browser Profiles Folder</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                            className="form-input"
+                            placeholder="Default: AppData / BrowserProfiles"
+                            value={profileBaseDir}
+                            onChange={(e) => setProfileBaseDir(e.target.value)}
+                            style={{ flex: 1, fontFamily: 'var(--font-mono)', fontSize: 12 }}
+                        />
+                        <button className="btn btn-secondary btn-sm" style={{ flexShrink: 0 }} onClick={browseProfileDir}>
+                            Browse...
+                        </button>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button
+                        className={`btn btn-${profileBaseDirSaved ? 'secondary' : 'primary'} btn-sm`}
+                        onClick={saveProfileBaseDir}
+                        style={{ color: profileBaseDirSaved ? 'var(--success)' : undefined }}
+                    >
+                        {profileBaseDirSaved ? '✓ Saved' : 'Save Path'}
+                    </button>
+                    {profileBaseDir && (
+                        <button className="btn btn-secondary btn-sm" onClick={() => setProfileBaseDir('')}>
+                            Reset to Default
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Credential Manager */}

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, Menu } from 'electron';
 import path from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import { DatabaseService, ensureReady } from './db/DatabaseService';
@@ -10,6 +10,10 @@ import { registerIpcHandlers } from './ipcHandlers';
 let mainWindow: BrowserWindow | null = null;
 let agentController: AgentController;
 
+// Remove native application menu (File/Edit/View/Window/Help)
+// frame:false hides the title bar but NOT the menu bar — we remove it explicitly
+Menu.setApplicationMenu(null);
+
 // ─── Create Window ────────────────────────────────────────────
 
 function createWindow(): void {
@@ -18,11 +22,10 @@ function createWindow(): void {
         height: 800,
         minWidth: 900,
         minHeight: 600,
-        frame: false,           // custom titlebar
+        frame: false,           // custom titlebar — no OS chrome
+        autoHideMenuBar: true,  // belt-and-suspenders: suppress any menu bar
         transparent: false,
         backgroundColor: '#0f1117',
-        titleBarStyle: 'hidden',
-        titleBarOverlay: false,
         show: false,
         icon: path.join(__dirname, '../../resources/icon.png'),
         webPreferences: {

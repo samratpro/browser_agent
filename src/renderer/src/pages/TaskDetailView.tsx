@@ -31,6 +31,9 @@ export default function TaskDetailView() {
     const [screenshot, setScreenshot] = useState<string>('');
     const [captcha, setCaptcha] = useState<{ msg: string; img?: string } | null>(null);
     const [learning, setLearning] = useState<{ actions: unknown[]; reasoning?: string } | null>(null);
+    const [interruptMsg, setInterruptMsg] = useState('');
+    const [sendingInterrupt, setSendingInterrupt] = useState(false);
+    const [showSetupModal, setShowSetupModal] = useState(false);
     const logsEndRef = useRef<HTMLDivElement>(null);
 
     const loadTask = async () => {
@@ -78,6 +81,17 @@ export default function TaskDetailView() {
             unsubUpdate(); unsubLog(); unsubShot(); unsubCaptcha(); unsubLearning();
         };
     }, [taskId]);
+
+    const handleInterrupt = async () => {
+        if (!taskId || !interruptMsg.trim()) return;
+        setSendingInterrupt(true);
+        try {
+            await window.electronAPI.interruptTask(taskId, interruptMsg.trim());
+            setInterruptMsg('');
+        } finally {
+            setSendingInterrupt(false);
+        }
+    };
 
     const handleAction = async (action: 'pause' | 'resume' | 'stop') => {
         if (!taskId) return;
