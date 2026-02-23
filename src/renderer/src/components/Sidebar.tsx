@@ -12,9 +12,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
     { path: '/', icon: '⊞', label: 'Dashboard' },
-    { path: '/tasks', icon: '▶', label: 'Tasks' },
+    { path: '/train', icon: '🧠', label: 'Train Task' },
+    { path: '/tasks', icon: '📋', label: 'Train Task List' },
     { path: '/patterns', icon: '◈', label: 'Patterns' },
-    { path: '/scheduler', icon: '⏰', label: 'Scheduler' },
+    { path: '/scheduler', icon: '⏰', label: 'Run Task' },
+    { path: '/running', icon: '▶', label: 'Running Tasks' },
     { path: '/logs', icon: '≡', label: 'Logs' },
     { path: '/settings', icon: '⚙', label: 'Settings' },
 ];
@@ -46,7 +48,7 @@ export default function Sidebar({ collapsed, onToggle }: {
         const load = async () => {
             try {
                 const data = await window.electronAPI.getTasks();
-                setTasks((data as Task[]).slice(0, 8));
+                setTasks((data as Task[]).slice(0, 5));
             } catch { /* ignore */ }
         };
         load();
@@ -82,7 +84,7 @@ export default function Sidebar({ collapsed, onToggle }: {
                 {tasks.length > 0 && (
                     <div className="sidebar-task-section">
                         {!collapsed && (
-                            <div className="sidebar-task-header">Recent Tasks</div>
+                            <div className="sidebar-task-header">RECENT TASKS</div>
                         )}
                         {tasks.map((task) => (
                             <button

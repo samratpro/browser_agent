@@ -27,7 +27,12 @@ export default function SchedulerPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // Form state
+    // Instant Run state
+    const [prompt, setPrompt] = useState('');
+    const [url, setUrl] = useState('');
+    const [running, setRunning] = useState(false);
+
+    // Schedule form state
     const [name, setName] = useState('');
     const [patternId, setPatternId] = useState('');
     const [cron, setCron] = useState('0 9 * * 1-5');
@@ -48,11 +53,17 @@ export default function SchedulerPage() {
 
     useEffect(() => { load(); }, []);
 
-    const viewRuns = async (scheduleId: string) => {
-        setSelectedId(scheduleId === selectedId ? null : scheduleId);
-        if (scheduleId !== selectedId) {
-            const r = await window.electronAPI.getScheduleRuns(scheduleId);
-            setRuns(r as ScheduleRun[]);
+    const handleInstantRun = async () => {
+        if (!prompt.trim()) return;
+        setRunning(true);
+        try {
+            const result = await window.electronAPI.runTask({ prompt, url }) as { taskId: string };
+            if (result?.taskId) {
+                // Navigate to individual running task UI (Point 4)
+                window.location.hash = `#/tasks/${result.taskId}`;
+            }
+        } finally {
+            setRunning(false);
         }
     };
 
@@ -65,6 +76,14 @@ export default function SchedulerPage() {
             await load();
         } finally {
             setCreating(false);
+        }
+    };
+
+    const viewRuns = async (scheduleId: string) => {
+        setSelectedId(scheduleId === selectedId ? null : scheduleId);
+        if (scheduleId !== selectedId) {
+            const r = await window.electronAPI.getScheduleRuns(scheduleId);
+            setRuns(r as ScheduleRun[]);
         }
     };
 
@@ -90,13 +109,35 @@ export default function SchedulerPage() {
     return (
         <div className="page animate-fade-in">
             <div className="page-header">
-                <h1 className="page-title">Scheduler</h1>
-                <p className="page-subtitle">Automate recurring tasks with cron schedules</p>
+                <h1 className="page-title">Run Task</h1>
+                <p className="page-subtitle">Instant run or schedule automated tasks</p>
+            </div>
+
+            {/* Instant Run Card */}
+            <div className="card" style={{ marginBottom: 24 }}>
+                <div className="card-title" style={{ marginBottom: 16 }}>Instant Run</div>
+                <div className="form-group">
+                    <label className="form-label">What do you want to automate?</label>
+                    <textarea
+                        className="form-textarea"
+                        placeholder='e.g. "Scrape products from amazon"'
+                        value={prompt}
+                        onChange={e => setPrompt(e.target.value)}
+                        rows={3}
+                    />
+                </div>
+                <div className="form-group">
+                    <label className="form-label">Target URL (optional)</label>
+                    <input className="form-input" placeholder="https://..." value={url} onChange={e => setUrl(e.target.value)} />
+                </div>
+                <button className="btn btn-primary" onClick={handleInstantRun} disabled={running || !prompt.trim()}>
+                    {running ? 'Starting...' : '▶ Start Task Now'}
+                </button>
             </div>
 
             {/* Create Schedule Card */}
             <div className="card" style={{ marginBottom: 24 }}>
-                <div className="card-title" style={{ marginBottom: 16 }}>Create Schedule</div>
+                <div className="card-title" style={{ marginBottom: 16 }}>Schedule Task</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
                         <label className="form-label">Schedule Name</label>

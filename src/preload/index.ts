@@ -32,6 +32,7 @@ const customAPI = {
             browserType?: string;
             headless?: boolean;
             profileName?: string;
+            profileBaseDir?: string;
             proxy?: { server: string; username?: string; password?: string };
             debugPort?: number;
         };
@@ -89,11 +90,17 @@ const customAPI = {
     // ── Browser Profile Setup ──────────────────────────────────
     // Launches the system browser with a persistent profile so the user
     // can log in manually. Resolves when the browser is closed — session saved.
-    setupBrowserProfile: (profileName: string, url?: string) =>
-        ipcRenderer.invoke('browser:setupProfile', profileName, url),
+    setupBrowserProfile: (
+        profileName: string,
+        url?: string,
+        browserType?: string,
+        proxy?: { server: string; username?: string; password?: string },
+        profileBaseDir?: string
+    ) => ipcRenderer.invoke('browser:setupProfile', profileName, url, browserType, proxy, profileBaseDir),
     listBrowserProfiles: () => ipcRenderer.invoke('browser:listProfiles'),
     deleteBrowserProfile: (profileName: string) => ipcRenderer.invoke('browser:deleteProfile', profileName),
     getBrowserProfilesDir: () => ipcRenderer.invoke('browser:getProfilesDir'),
+    getDefaultPaths: () => ipcRenderer.invoke('app:getDefaultPaths'),
 
     // ── Realtime event listeners ───────────────────────────────
     onTaskUpdate: (callback: (event: unknown) => void) => {

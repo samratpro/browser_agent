@@ -1,4 +1,5 @@
 import { IpcMain, shell, BrowserWindow, dialog, app } from 'electron';
+import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentController } from './agent/AgentController';
 import { DatabaseService } from './db/DatabaseService';
@@ -90,8 +91,8 @@ export function registerIpcHandlers(
     // ── Task Control ────────────────────────────────────────────
 
     // Helper: resolve BrowserProfileService using the user-configured base dir
-    const getBrowserProfileService = () => {
-        return new BrowserProfileService(settings.get('profileBaseDir') ?? undefined);
+    const getBrowserProfileService = (overrideBaseDir?: string) => {
+        return new BrowserProfileService(overrideBaseDir || settings.get('profileBaseDir') || undefined);
     };
 
     ipcMain.handle('task:run', async (_event, params: {
@@ -104,6 +105,7 @@ export function registerIpcHandlers(
             browserType?: string;
             headless?: boolean;
             profileName?: string;
+            profileBaseDir?: string;
             proxy?: { server: string; username?: string; password?: string };
             debugPort?: number;
         };
@@ -116,7 +118,7 @@ export function registerIpcHandlers(
         // Resolve profile path from profile name using the configured base dir
         let resolvedConfig: BrowserConfig | undefined;
         if (rawConfig) {
-            const svc = getBrowserProfileService();
+            const svc = getBrowserProfileService(rawConfig.profileBaseDir);
             resolvedConfig = {
                 browserType: (rawConfig.browserType as BrowserConfig['browserType']) ?? 'chromium',
                 headless: rawConfig.headless,
@@ -296,8 +298,8 @@ export function registerIpcHandlers(
 
     // ── Browser Profile Setup ────────────────────────────────────
 
-    ipcMain.handle('browser:setupProfile', async (_event, profileName: string, url?: string) => {
-        return getBrowserProfileService().setupProfile(profileName, url);
+    ipcMain.handle('browser:setupProfile', async (_event, profileName: string, url?: string, browserType?: string, proxy?: { server: string; username?: string; password?: string }, profileBaseDir?: string) => {
+        return getBrowserProfileService(profileBaseDir).setupProfile(profileName, url, browserType, proxy);
     });
 
     ipcMain.handle('browser:listProfiles', () => {
@@ -311,5 +313,14 @@ export function registerIpcHandlers(
 
     ipcMain.handle('browser:getProfilesDir', () => {
         return getBrowserProfileService().getBaseDir();
+    });
+
+    ipcMain.handle('app:getDefaultPaths', () => {
+        const docs = app.getPath('documents');
+        return {
+            documents: docs,
+            profiles: path.join(docs, 'Browser_Agent', 'Profiles'),
+            tasks: path.join(docs, 'Browser_Agent', 'Tasks'),
+        };
     });
 }

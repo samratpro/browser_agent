@@ -36,11 +36,19 @@ export default function TaskDetailView() {
     const [showSetupModal, setShowSetupModal] = useState(false);
     const logsEndRef = useRef<HTMLDivElement>(null);
 
+    const [viewMode, setViewMode] = useState<'train' | 'run'>('train');
+
     const loadTask = async () => {
         if (!taskId) return;
         const all = (await window.electronAPI.getTasks()) as Task[];
         const found = all.find((t) => t.id === taskId);
-        if (found) setTask(found);
+        if (found) {
+            setTask(found);
+            // Detect mode based on state if it's the first load or state changed significantly
+            if (found.state === AgentState.EXECUTING && viewMode === 'train') {
+                setViewMode('run');
+            }
+        }
     };
 
     const loadLogs = async () => {
@@ -82,17 +90,6 @@ export default function TaskDetailView() {
         };
     }, [taskId]);
 
-    const handleInterrupt = async () => {
-        if (!taskId || !interruptMsg.trim()) return;
-        setSendingInterrupt(true);
-        try {
-            await window.electronAPI.interruptTask(taskId, interruptMsg.trim());
-            setInterruptMsg('');
-        } finally {
-            setSendingInterrupt(false);
-        }
-    };
-
     const handleAction = async (action: 'pause' | 'resume' | 'stop') => {
         if (!taskId) return;
         const api = {
@@ -123,138 +120,132 @@ export default function TaskDetailView() {
         );
     }
 
-    return (
-        <div className="page animate-fade-in">
-            {/* CAPTCHA Overlay */}
-            {captcha && (
-                <div className="captcha-overlay">
-                    <div className="captcha-modal">
-                        <div style={{ fontSize: 32, marginBottom: 12 }}>🛡️</div>
-                        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>CAPTCHA Detected</h2>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 20 }}>{captcha.msg}</p>
-                        {captcha.img && (
-                            <img src={`data:image/jpeg;base64,${captcha.img}`} alt="CAPTCHA screenshot"
-                                style={{ width: '100%', borderRadius: 'var(--radius-md)', marginBottom: 20 }} />
-                        )}
-                        <button className="btn btn-primary" onClick={async () => {
-                            if (taskId) await window.electronAPI.overrideCaptcha(taskId);
-                            setCaptcha(null);
-                        }}>
-                            ✓ I've solved the CAPTCHA — Continue
-                        </button>
-                    </div>
+    const renderTrainUI = () => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 40%', gridTemplateRows: '1fr 1fr', gap: 20, flex: 1, minHeight: 0 }}>
+            {/* 1. Top Left: Prompt area + Chat history */}
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="card-header">
+                    <span className="card-title">Prompt & History</span>
+                    <button className="btn btn-secondary btn-xs" onClick={() => setViewMode('run')}>Run View</button>
                 </div>
-            )}
-
-            {/* Learning Confirmation Overlay */}
-            {learning && (
-                <div className="captcha-overlay">
-                    <div className="captcha-modal" style={{ maxWidth: 560 }}>
-                        <div style={{ fontSize: 32, marginBottom: 12 }}>🧠</div>
-                        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Pattern Learning Complete</h2>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: 13, marginBottom: 16 }}>
-                            {learning.reasoning ?? 'The AI has learned the page structure and created an action plan.'}
-                        </p>
-                        <div style={{ background: 'var(--bg-base)', borderRadius: 'var(--radius-md)', padding: 12, marginBottom: 20, textAlign: 'left' }}>
-                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
-                                Planned Actions ({(learning.actions as unknown[]).length})
-                            </div>
-                            {(learning.actions as Array<{ type: string; selector?: string; url?: string }>).slice(0, 8).map((a, i) => (
-                                <div key={i} style={{ fontSize: 12, color: 'var(--text-secondary)', padding: '3px 0', fontFamily: 'var(--font-mono)' }}>
-                                    {i + 1}. {a.type}{a.selector ? ` → ${a.selector.slice(0, 40)}` : ''}{a.url ? ` → ${a.url.slice(0, 40)}` : ''}
-                                </div>
-                            ))}
-                            {learning.actions.length > 8 && (
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>... and {learning.actions.length - 8} more</div>
-                            )}
-                        </div>
-                        <div className="btn-row" style={{ justifyContent: 'center' }}>
-                            <button className="btn btn-primary" onClick={handleConfirmLearning}>✓ Confirm & Execute</button>
-                            <button className="btn btn-danger" onClick={async () => {
-                                if (taskId) await window.electronAPI.stopTask(taskId);
-                                setLearning(null);
-                            }}>✕ Cancel</button>
-                        </div>
+                <div style={{ flex: 1, overflowY: 'auto', marginBottom: 12, padding: '0 4px' }}>
+                    <div style={{ background: 'var(--accent-dim)', padding: 12, borderRadius: 'var(--radius-md)', marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', marginBottom: 4 }}>USER PROMPT</div>
+                        <div style={{ fontSize: 13 }}>{task.prompt}</div>
                     </div>
-                </div>
-            )}
-
-            {/* Header */}
-            <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                <div>
-                    <button onClick={() => navigate('/tasks')} className="btn btn-secondary btn-sm" style={{ marginBottom: 8 }}>
-                        ← Back to Tasks
-                    </button>
-                    <h1 className="page-title" style={{ fontSize: 18 }}>{task.name}</h1>
-                    <p className="page-subtitle">{task.domain}</p>
+                    {task.errorMessage && (
+                        <div style={{ background: 'var(--danger-dim)', padding: 10, borderRadius: 'var(--radius-md)', color: 'var(--danger)', fontSize: 12 }}>
+                            <strong>System:</strong> {task.errorMessage}
+                        </div>
+                    )}
+                    <div style={{ background: 'var(--bg-elevated)', padding: 10, borderRadius: 'var(--radius-md)', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        <strong>System:</strong> {task.state === AgentState.COMPLETED ? 'Task finished successfully.' : 'Status: ' + task.state}
+                    </div>
                 </div>
                 <div className="btn-row">
-                    {isActive && <button className="btn btn-warning btn-sm" onClick={() => handleAction('pause')}>⏸ Pause</button>}
-                    {isPaused && <button className="btn btn-secondary btn-sm" onClick={() => handleAction('resume')} style={{ color: 'var(--success)' }}>▶ Resume</button>}
-                    {(isActive || isPaused) && <button className="btn btn-danger btn-sm" onClick={() => handleAction('stop')}>⬛ Stop</button>}
+                    <button className="btn btn-primary btn-sm" disabled={!isActive} onClick={() => handleAction('resume')}>▶ Run Train Task</button>
+                    <button className="btn btn-secondary btn-sm" onClick={handleConfirmLearning} disabled={!learning}>✓ Confirm Step</button>
                 </div>
             </div>
 
-            {/* State Timeline */}
+            {/* 2. Top Right: Config Area */}
+            <div className="card" style={{ overflowY: 'auto' }}>
+                <div className="card-title" style={{ marginBottom: 16 }}>Current Config Area</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>DOMAIN</div>
+                        <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)' }}>{task.domain}</div>
+                    </div>
+                    {task.credentials?.url && (
+                        <div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>TARGET URL</div>
+                            <div style={{ fontSize: 12, wordBreak: 'break-all' }}>{task.credentials.url}</div>
+                        </div>
+                    )}
+                    {task.credentials?.email && (
+                        <div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>EMAIL</div>
+                            <div style={{ fontSize: 13 }}>{task.credentials.email}</div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* 3. Bottom Left: Step List */}
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="card-title" style={{ marginBottom: 12 }}>Step List</div>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {task.executionGraph?.steps.map((s, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)', alignItems: 'flex-start' }}>
+                            <div style={{
+                                width: 16, height: 16, borderRadius: '50%', fontSize: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2,
+                                background: s.status === 'success' ? 'var(--success)' : s.status === 'running' ? 'var(--accent)' : 'var(--bg-hover)',
+                                color: '#fff'
+                            }}>
+                                {s.status === 'success' ? '✓' : i + 1}
+                            </div>
+                            <div>
+                                <div style={{ fontSize: 12, fontWeight: 600 }}>{s.action.type.toUpperCase()}</div>
+                                {'selector' in s.action && <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }} className="truncate">{s.action.selector}</div>}
+                            </div>
+                        </div>
+                    ))}
+                    {!task.executionGraph?.steps.length && <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)', fontSize: 12 }}>No execution steps yet.</div>}
+                </div>
+            </div>
+
+            {/* 4. Bottom Right: Logs */}
+            <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="card-title" style={{ marginBottom: 12 }}>Logs</div>
+                <div className="log-viewer" style={{ flex: 1, fontSize: 11 }}>
+                    {logs.slice(-100).map((l) => (
+                        <div key={l.id} className="log-line">
+                            <span className="log-msg" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.message}</span>
+                        </div>
+                    ))}
+                    <div ref={logsEndRef} />
+                </div>
+            </div>
+        </div>
+    );
+
+    const renderRunUI = () => (
+        <>
             <div className="card" style={{ marginBottom: 20 }}>
-                <div className="card-title" style={{ marginBottom: 14 }}>State Timeline</div>
+                <div className="card-header">
+                    <span className="card-title">State Timeline</span>
+                    <button className="btn btn-secondary btn-xs" onClick={() => setViewMode('train')}>Train View</button>
+                </div>
                 <div className="state-timeline">
                     {STATES_ORDERED.map((s, i) => (
-                        <>
+                        <React.Fragment key={s}>
                             {i > 0 && (
-                                <div key={`c-${i}`} className={`timeline-connector ${i <= currentStateIdx ? 'done' : ''}`} />
+                                <div className={`timeline-connector ${i <= currentStateIdx ? 'done' : ''}`} />
                             )}
-                            <div key={s} className="timeline-step">
+                            <div className="timeline-step">
                                 <div className={`timeline-dot ${s === task.state ? 'active' : i < currentStateIdx ? 'done' : ''}`}>
                                     {i < currentStateIdx ? '✓' : i + 1}
                                 </div>
                                 <div className="timeline-label">{s}</div>
                             </div>
-                        </>
+                        </React.Fragment>
                     ))}
                 </div>
-                {task.errorMessage && (
-                    <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--danger-dim)', borderRadius: 'var(--radius-md)', fontSize: 12, color: 'var(--danger)' }}>
-                        {task.errorMessage}
-                    </div>
-                )}
             </div>
 
-            {/* Two-column: Screenshot + Logs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                {/* Live Screenshot */}
-                <div className="card">
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, flex: 1 }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div className="card-title" style={{ marginBottom: 12 }}>Live Browser</div>
-                    <div className="screenshot-viewer">
-                        {screenshot
-                            ? <img src={`data:image/jpeg;base64,${screenshot}`} alt="Live browser view" />
-                            : <div className="screenshot-placeholder">
-                                <div style={{ fontSize: 24, marginBottom: 8 }}>🖥️</div>
-                                <div>Browser view will appear here</div>
-                            </div>
-                        }
-                    </div>
-                    <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                        {task.state === AgentState.EXECUTING ? '● Live' : '○ Idle'} · {task.domain}
+                    <div className="screenshot-viewer" style={{ flex: 1 }}>
+                        {screenshot ? <img src={`data:image/jpeg;base64,${screenshot}`} alt="Live view" /> : <div className="screenshot-placeholder">Waiting for browser...</div>}
                     </div>
                 </div>
-
-                {/* Execution Logs */}
                 <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div className="card-header">
-                        <span className="card-title">Execution Logs</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                            {logs.length} lines
-                        </span>
-                    </div>
+                    <div className="card-title" style={{ marginBottom: 12 }}>Execution Logs</div>
                     <div className="log-viewer" style={{ flex: 1 }}>
-                        {!logs.length && (
-                            <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: 20 }}>No logs yet</div>
-                        )}
                         {logs.map((l) => (
                             <div key={l.id} className={`log-line ${l.level}`}>
                                 <span className="log-time">{formatTs(l.timestamp)}</span>
-                                <span className="log-level">{l.level.toUpperCase()}</span>
                                 <span className="log-msg">{l.message}</span>
                             </div>
                         ))}
@@ -262,38 +253,50 @@ export default function TaskDetailView() {
                     </div>
                 </div>
             </div>
+        </>
+    );
 
-            {/* Extracted Data */}
-            {task.extractedData && (task.extractedData as unknown[]).length > 0 && (
-                <div className="card" style={{ marginTop: 20 }}>
-                    <div className="card-header">
-                        <span className="card-title">Extracted Data</span>
-                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                            {(task.extractedData as unknown[]).length} records
-                        </span>
-                    </div>
-                    <div className="table-wrapper" style={{ border: 'none', borderRadius: 0 }}>
-                        <table>
-                            <thead>
-                                <tr>
-                                    {task.extractedData[0] && Object.keys(task.extractedData[0] as object).map((k) => (
-                                        <th key={k}>{k}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {(task.extractedData as Record<string, string>[]).slice(0, 50).map((row, i) => (
-                                    <tr key={i}>
-                                        {Object.values(row).map((v, j) => (
-                                            <td key={j} style={{ maxWidth: 200 }} className="truncate">{String(v)}</td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+    return (
+        <div className="page animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {captcha && (
+                <div className="captcha-overlay">
+                    <div className="captcha-modal">
+                        <h2>CAPTCHA Detected</h2>
+                        <p>{captcha.msg}</p>
+                        {captcha.img && <img src={`data:image/jpeg;base64,${captcha.img}`} alt="captcha" style={{ width: '100%', marginBottom: 20 }} />}
+                        <button className="btn btn-primary" onClick={async () => {
+                            if (taskId) await window.electronAPI.overrideCaptcha(taskId);
+                            setCaptcha(null);
+                        }}>I've solved it</button>
                     </div>
                 </div>
             )}
+
+            {learning && (
+                <div className="captcha-overlay">
+                    <div className="captcha-modal">
+                        <h2>Learning Complete</h2>
+                        <p>{learning.reasoning}</p>
+                        <button className="btn btn-primary" onClick={handleConfirmLearning}>Confirm & Execute</button>
+                    </div>
+                </div>
+            )}
+
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <div>
+                    <h1 className="page-title">{task.name}</h1>
+                    <p className="page-subtitle">{task.domain}</p>
+                </div>
+                <div className="btn-row">
+                    {isActive && <button className="btn btn-warning btn-sm" onClick={() => handleAction('pause')}>Pause</button>}
+                    {isPaused && <button className="btn btn-secondary btn-sm" onClick={() => handleAction('resume')}>Resume</button>}
+                    {(isActive || isPaused) && <button className="btn btn-danger btn-sm" onClick={() => handleAction('stop')}>Stop</button>}
+                </div>
+            </div>
+
+            {viewMode === 'train' ? renderTrainUI() : renderRunUI()}
         </div>
     );
 }
+
+import React from 'react';

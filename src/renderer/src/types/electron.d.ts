@@ -74,6 +74,7 @@ export interface ElectronAPI {
             browserType?: string;
             headless?: boolean;
             profileName?: string;
+            profileBaseDir?: string;
             proxy?: { server: string; username?: string; password?: string };
             debugPort?: number;
         };
@@ -123,10 +124,17 @@ export interface ElectronAPI {
     deleteCredential: (id: string) => Promise<void>;
 
     // Browser Profile Setup
-    setupBrowserProfile: (profileName: string, url?: string) => Promise<{ success: boolean; profilePath: string }>;
+    setupBrowserProfile: (
+        profileName: string,
+        url?: string,
+        browserType?: string,
+        proxy?: { server: string; username?: string; password?: string },
+        profileBaseDir?: string
+    ) => Promise<{ success: boolean; profilePath: string }>;
     listBrowserProfiles: () => Promise<Array<{ name: string; path: string; createdAt: number }>>;
     deleteBrowserProfile: (profileName: string) => Promise<void>;
     getBrowserProfilesDir: () => Promise<string>;
+    getDefaultPaths: () => Promise<{ documents: string; profiles: string; tasks: string }>;
 
     // ── Push event listeners (clean-up functions returned) ──────
 

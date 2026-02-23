@@ -52,22 +52,40 @@ export class BrowserProfileService {
     }
 
     // Launch browser → user does manual actions → close → session saved
-    async setupProfile(profileName: string, url?: string): Promise<{ success: boolean; profilePath: string }> {
+    async setupProfile(
+        profileName: string,
+        url?: string,
+        browserType: string = 'chrome',
+        proxy?: { server: string; username?: string; password?: string }
+    ): Promise<{ success: boolean; profilePath: string }> {
         const profilePath = this.getProfilePath(profileName);
 
-        const browserPath = this.findBrowserPath();
+        const browserPath = this.findBrowserPath(browserType);
         if (!browserPath) {
             throw new Error(
-                'No supported browser found. Please install Google Chrome, Microsoft Edge, or Brave Browser.'
+                `Could not find ${browserType}. Please ensure it is installed.`
             );
         }
 
-        const args = [
+        const args = browserType === 'firefox' ? [
+            '-profile', profilePath,
+            '-no-remote'
+        ] : [
             `--user-data-dir=${profilePath}`,
             '--no-first-run',
             '--no-default-browser-check',
-            '--disable-features=BraveShields',
+            '--disable-blink-features=AutomationControlled',
         ];
+
+        if (browserType === 'brave') {
+            args.push('--disable-features=BraveShields');
+        }
+
+        if (proxy?.server && browserType !== 'firefox') {
+            args.push(`--proxy-server=${proxy.server}`);
+        }
+        // Firefox proxy config usually requires prefs.js manipulation or separate extensions
+        // but for now we'll stick to basic launch.
 
         if (url) args.push(url);
 
@@ -83,46 +101,53 @@ export class BrowserProfileService {
         return { success: true, profilePath };
     }
 
-    private findBrowserPath(): string | null {
+    private findBrowserPath(type: string = 'chrome'): string | null {
         const platform = os.platform();
+        const home = os.homedir();
         const candidates: string[] = [];
 
         if (platform === 'win32') {
-            const home = os.homedir();
-            candidates.push(
-                // Chrome
-                path.join(home, 'AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'),
-                'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-                'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-                // Edge
-                path.join(home, 'AppData\\Local\\Microsoft\\Edge\\Application\\msedge.exe'),
-                'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-                'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-                // Brave
-                path.join(home, 'AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
-                'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
-                'C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
-                // Comet
-                path.join(home, 'AppData\\Local\\CometBrowser\\Application\\comet.exe'),
-                // Chromium
-                path.join(home, 'AppData\\Local\\Chromium\\Application\\chromium.exe'),
-            );
+            if (type === 'chrome') {
+                candidates.push(
+                    path.join(home, 'AppData\\Local\\Google\\Chrome\\Application\\chrome.exe'),
+                    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+                    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+                );
+            } else if (type === 'edge') {
+                candidates.push(
+                    path.join(home, 'AppData\\Local\\Microsoft\\Edge\\Application\\msedge.exe'),
+                    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+                    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+                );
+            } else if (type === 'brave') {
+                candidates.push(
+                    path.join(home, 'AppData\\Local\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
+                    'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+                    'C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe'
+                );
+            } else if (type === 'firefox') {
+                candidates.push(
+                    'C:\\Program Files\\Mozilla Firefox\\firefox.exe',
+                    'C:\\Program Files (x86)\\Mozilla Firefox\\firefox.exe',
+                    path.join(home, 'AppData\\Local\\Mozilla Firefox\\firefox.exe')
+                );
+            } else if (type === 'comet') {
+                candidates.push(path.join(home, 'AppData\\Local\\CometBrowser\\Application\\comet.exe'));
+            } else if (type === 'chromium') {
+                candidates.push(path.join(home, 'AppData\\Local\\Chromium\\Application\\chromium.exe'));
+            }
         } else if (platform === 'darwin') {
-            candidates.push(
-                '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-                '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
-                '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-                '/Applications/Chromium.app/Contents/MacOS/Chromium',
-            );
+            if (type === 'chrome') candidates.push('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
+            else if (type === 'brave') candidates.push('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser');
+            else if (type === 'edge') candidates.push('/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge');
+            else if (type === 'firefox') candidates.push('/Applications/Firefox.app/Contents/MacOS/firefox');
+            else if (type === 'chromium') candidates.push('/Applications/Chromium.app/Contents/MacOS/Chromium');
         } else {
-            candidates.push(
-                '/usr/bin/google-chrome',
-                '/usr/bin/google-chrome-stable',
-                '/usr/bin/brave-browser',
-                '/usr/bin/microsoft-edge',
-                '/usr/bin/chromium-browser',
-                '/usr/bin/chromium',
-            );
+            if (type === 'chrome') candidates.push('/usr/bin/google-chrome', '/usr/bin/google-chrome-stable');
+            else if (type === 'brave') candidates.push('/usr/bin/brave-browser');
+            else if (type === 'edge') candidates.push('/usr/bin/microsoft-edge');
+            else if (type === 'firefox') candidates.push('/usr/bin/firefox');
+            else if (type === 'chromium') candidates.push('/usr/bin/chromium-browser', '/usr/bin/chromium');
         }
 
         return candidates.find((p) => fs.existsSync(p)) ?? null;
