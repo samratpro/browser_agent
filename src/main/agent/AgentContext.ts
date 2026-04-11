@@ -8,6 +8,7 @@ export interface InterruptSignals {
     shouldStop: boolean;
     shouldPause: boolean;
     shouldResume: boolean;
+    interruptMessage?: string;
 }
 
 export class AgentContext {

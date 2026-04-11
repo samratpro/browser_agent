@@ -58,7 +58,7 @@ export class AgentController extends EventEmitter {
         const ctx = new AgentContext(taskId, prompt, credentials);
         this.contexts.set(taskId, ctx);
 
-        const engine = new ExecutionEngine(new SelectorRecovery(this.aiPlanner));
+        const engine = new ExecutionEngine(new SelectorRecovery(this.aiPlanner), this.db);
         this.engines.set(taskId, engine);
 
         // Wire engine events → controller events

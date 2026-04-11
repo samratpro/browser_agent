@@ -30,6 +30,8 @@ export default function MissionControlPage() {
         profilePath: '',
         resourcePath: '',
     });
+    const [advancedOpen, setAdvancedOpen] = useState(false);
+    const [isBrowserRunning, setIsBrowserRunning] = useState(false);
 
     useEffect(() => {
         // Load default paths when component mounts
@@ -173,14 +175,13 @@ export default function MissionControlPage() {
                             </div>
                             <button onClick={() => setIsSettingsOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: 24, cursor: 'pointer', outline: 'none' }}>&times;</button>
                         </div>
-                        
                         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
-                            {/* Authentication */}
+                            {/* Basic Configuration */}
                             <div>
-                                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Authentication (Optional)</div>
+                                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Basic Configuration</div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                    <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">Target URL</label>
+                                    <div className="form-group" style={{ marginBottom: 0, gridColumn: 'span 2' }}>
+                                        <label className="form-label">Target URL (Optional)</label>
                                         <input className="form-input" placeholder="https://..." value={config.url} onChange={e => setConfig({ ...config, url: e.target.value })} />
                                     </div>
                                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -191,84 +192,113 @@ export default function MissionControlPage() {
                                         <label className="form-label">Password</label>
                                         <input type="password" className="form-input" value={config.password} onChange={e => setConfig({ ...config, password: e.target.value })} />
                                     </div>
-                                    <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">2FA Code</label>
-                                        <input className="form-input" value={config.twoFactor} onChange={e => setConfig({ ...config, twoFactor: e.target.value })} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Browser Environment */}
-                            <div>
-                                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Browser Environment</div>
-                                <div style={{ display: 'grid', gap: 16 }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">Select Browser Engine</label>
-                                            <select className="form-select" value={config.browser} onChange={e => setConfig({ ...config, browser: e.target.value })}>
-                                                <option value="chrome">Google Chrome (Default)</option>
-                                                <option value="firefox">Mozilla Firefox</option>
-                                                <option value="edge">Microsoft Edge</option>
-                                                <option value="brave">Brave Browser</option>
-                                            </select>
-                                        </div>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">Active Profile Name</label>
-                                            <input className="form-input" value={config.profileName} onChange={e => setConfig({ ...config, profileName: e.target.value })} />
-                                        </div>
-                                    </div>
-
-                                    <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">Profile Directory Path</label>
-                                        <div style={{ display: 'flex', gap: 8 }}>
-                                            <input className="form-input" style={{ flex: 1 }} value={config.profilePath} readOnly />
-                                            <button className="btn btn-secondary" onClick={() => handleBrowseFolder('profilePath')}>Browse</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="form-group" style={{ marginBottom: 0 }}>
-                                        <label className="form-label">Resource Storage Path</label>
-                                        <div style={{ display: 'flex', gap: 8 }}>
-                                            <input className="form-input" style={{ flex: 1 }} value={config.resourcePath} readOnly />
-                                            <button className="btn btn-secondary" onClick={() => handleBrowseFolder('resourcePath')}>Browse</button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, gridColumn: 'span 2', marginTop: 4 }}>
                                         <input type="checkbox" id="headlessMode" checked={config.headless} onChange={e => setConfig({ ...config, headless: e.target.checked })} style={{ cursor: 'pointer' }} />
                                         <label htmlFor="headlessMode" style={{ fontSize: 13, cursor: 'pointer', color: 'var(--text-primary)' }}>Run Headless (Hidden Browser)</label>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Network Proxy */}
-                            <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                    <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Network Proxy</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <input type="checkbox" id="useProxy" checked={config.useProxy} onChange={e => setConfig({ ...config, useProxy: e.target.checked })} style={{ cursor: 'pointer' }} />
-                                        <label htmlFor="useProxy" style={{ fontSize: 13, cursor: 'pointer', color: 'var(--text-primary)' }}>Enabled</label>
-                                    </div>
+                            {/* Advanced Features */}
+                            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+                                <div 
+                                    onClick={() => setAdvancedOpen(!advancedOpen)}
+                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                                >
+                                    <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Advanced Parameters</div>
+                                    <span style={{ fontSize: 12 }}>{advancedOpen ? '▼' : '▶'}</span>
                                 </div>
 
-                                {config.useProxy ? (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 12 }}>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">Server URL</label>
-                                            <input className="form-input" placeholder="host:port" value={config.proxyServer} onChange={e => setConfig({ ...config, proxyServer: e.target.value })} />
+                                {advancedOpen && (
+                                    <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 24 }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                                <label className="form-label">Browser Engine</label>
+                                                <select className="form-select" value={config.browser} onChange={e => setConfig({ ...config, browser: e.target.value })}>
+                                                    <option value="chrome">Google Chrome</option>
+                                                    <option value="firefox">Mozilla Firefox</option>
+                                                    <option value="brave">Brave Browser</option>
+                                                </select>
+                                            </div>
+                                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                                <label className="form-label">Profile Alias</label>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        <input className="form-input" style={{ flex: 1 }} value={config.profileName} onChange={e => setConfig({ ...config, profileName: e.target.value })} />
+                                                        <button 
+                                                            className="btn btn-secondary btn-sm" 
+                                                            disabled={isBrowserRunning}
+                                                            onClick={async () => {
+                                                                if (!window.electronAPI) return;
+                                                                setIsBrowserRunning(true);
+                                                                try {
+                                                                    await window.electronAPI.setupBrowserProfile(
+                                                                        config.profileName,
+                                                                        config.url || 'https://google.com',
+                                                                        config.browser,
+                                                                        config.useProxy ? {
+                                                                            server: config.proxyServer,
+                                                                            username: config.proxyUser,
+                                                                            password: config.proxyPass
+                                                                        } : undefined,
+                                                                        config.profilePath
+                                                                    );
+                                                                } catch (err) {
+                                                                    alert('Error launching setup browser: ' + err);
+                                                                } finally {
+                                                                    setIsBrowserRunning(false);
+                                                                }
+                                                            }}
+                                                            style={{ 
+                                                                whiteSpace: 'nowrap', 
+                                                                borderRadius: 'var(--radius-pill)', 
+                                                                border: `1px solid ${isBrowserRunning ? 'var(--border)' : 'var(--accent)'}`, 
+                                                                color: isBrowserRunning ? 'var(--text-muted)' : 'var(--accent)',
+                                                                minWidth: 120
+                                                            }}
+                                                        >
+                                                            {isBrowserRunning ? 'Browser Running...' : 'Run Setup'}
+                                                        </button>
+                                                    </div>
+                                                    {isBrowserRunning && (
+                                                        <div style={{ fontSize: 11, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', background: 'var(--bg-base)', borderRadius: 4 }}>
+                                                            <span>ℹ️</span> 
+                                                            <span>Manual setup active. Close browser tab/window to save and return.</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
+
                                         <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">User</label>
-                                            <input className="form-input" value={config.proxyUser} onChange={e => setConfig({ ...config, proxyUser: e.target.value })} />
+                                            <label className="form-label">Storage Paths</label>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <input className="form-input" style={{ flex: 1, fontSize: 11 }} value={config.profilePath} readOnly />
+                                                    <button className="btn btn-secondary btn-sm" onClick={() => handleBrowseFolder('profilePath')}>Profile</button>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <input className="form-input" style={{ flex: 1, fontSize: 11 }} value={config.resourcePath} readOnly />
+                                                    <button className="btn btn-secondary btn-sm" onClick={() => handleBrowseFolder('resourcePath')}>Output</button>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="form-group" style={{ marginBottom: 0 }}>
-                                            <label className="form-label">Pass</label>
-                                            <input type="password" className="form-input" value={config.proxyPass} onChange={e => setConfig({ ...config, proxyPass: e.target.value })} />
+
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                                <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase' }}>Proxy</div>
+                                                <input type="checkbox" checked={config.useProxy} onChange={e => setConfig({ ...config, useProxy: e.target.checked })} />
+                                            </div>
+                                            {config.useProxy && (
+                                                <div style={{ display: 'grid', gap: 8 }}>
+                                                    <input className="form-input" placeholder="host:port" value={config.proxyServer} onChange={e => setConfig({ ...config, proxyServer: e.target.value })} />
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                                        <input className="form-input" placeholder="User" value={config.proxyUser} onChange={e => setConfig({ ...config, proxyUser: e.target.value })} />
+                                                        <input type="password" className="form-input" placeholder="Pass" value={config.proxyPass} onChange={e => setConfig({ ...config, proxyPass: e.target.value })} />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '16px', background: 'var(--bg-base)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                                        Using direct system connection
                                     </div>
                                 )}
                             </div>

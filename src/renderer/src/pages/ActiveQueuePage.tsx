@@ -77,10 +77,18 @@ export default function ActiveQueuePage() {
                                 )}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }} className="truncate">
-                                        {task.name || 'Untitled Task'}
+                                        {task.name || 'Untitled Mission'}
                                     </span>
-                                    <span className="badge badge-planning" style={{ fontSize: 9 }}>
-                                        {task.trained ? 'AUTONOMOUS' : 'TRAINING'}
+                                    <span style={{ 
+                                        fontSize: 9, 
+                                        padding: '2px 8px', 
+                                        borderRadius: 4, 
+                                        background: 'var(--bg-base)',
+                                        color: 'var(--accent)',
+                                        fontWeight: 800,
+                                        border: '1px solid var(--border)'
+                                    }}>
+                                        {(task.type || 'scraping').toUpperCase()}
                                     </span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
@@ -88,15 +96,18 @@ export default function ActiveQueuePage() {
                                         <div style={{ 
                                             height: '100%', 
                                             width: `${task.progress || (task.state === AgentState.COMPLETED ? 100 : 0)}%`,
-                                            background: task.state === AgentState.FAILED ? 'var(--danger)' : 'var(--accent)',
+                                            background: task.state === AgentState.FAILED ? 'var(--danger)' : 
+                                                       task.state === AgentState.REPAIRING ? 'var(--warning)' : 
+                                                       task.state === AgentState.VALIDATING ? '#28c840' : 'var(--accent)',
                                             transition: 'width 0.4s'
                                         }} />
                                     </div>
                                     <span style={{ 
                                         fontSize: 10, 
-                                        fontWeight: 600, 
+                                        fontWeight: 800, 
                                         color: task.state === AgentState.COMPLETED ? 'var(--success)' : 
-                                               task.state === AgentState.FAILED ? 'var(--danger)' : 'var(--text-muted)'
+                                               task.state === AgentState.FAILED ? 'var(--danger)' : 
+                                               task.state === AgentState.PLANNING ? 'var(--info)' : 'var(--text-muted)'
                                     }}>
                                         {task.state}
                                     </span>
@@ -165,30 +176,55 @@ export default function ActiveQueuePage() {
                                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#28c840' }} />
                                         <span style={{ fontSize: 10, color: '#666', marginLeft: 8, fontFamily: 'var(--font-mono)' }}>mission_telemetry.log</span>
                                     </div>
-                                    <div style={{ flex: 1, overflowY: 'auto', padding: 16, fontFamily: 'var(--font-mono)', fontSize: 13, background: '#0a0a0a', color: '#d1d5db', lineHeight: 1.6 }}>
-                                        <div style={{ color: 'var(--success)', marginBottom: 6 }}>
-                                            <span style={{ opacity: 0.5, marginRight: 8 }}>[14:22:01]</span>
-                                            ✔ Opened website (LinkedIn)
+                                    <div style={{ flex: 1, overflowY: 'auto', padding: 0, fontFamily: 'var(--font-mono)', fontSize: 12, background: '#0a0a0a', color: '#d1d5db' }}>
+                                        {/* Premium Mission Logs */}
+                                        <div style={{ borderBottom: '1px solid #1a1a1a', padding: '12px 16px', background: 'rgba(99, 102, 241, 0.05)' }}>
+                                            <div style={{ display: 'flex', gap: 12 }}>
+                                                <span style={{ color: 'var(--success)', fontWeight: 800 }}>[ACTION]</span>
+                                                <span style={{ fontWeight: 600 }}>Navigate to Target URL</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                                                <span style={{ color: 'var(--info)', fontWeight: 800 }}>[RESULT]</span>
+                                                <span>Page fully loaded in 2.1s</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                                                <span style={{ color: 'var(--warning)', fontWeight: 800 }}>[REASON]</span>
+                                                <span style={{ opacity: 0.8 }}>Verify landing page state before exploration</span>
+                                            </div>
                                         </div>
-                                        <div style={{ color: 'var(--success)', marginBottom: 6 }}>
-                                            <span style={{ opacity: 0.5, marginRight: 8 }}>[14:22:04]</span>
-                                            ✔ Navigated to Inbox
+
+                                        <div style={{ borderBottom: '1px solid #1a1a1a', padding: '12px 16px' }}>
+                                            <div style={{ display: 'flex', gap: 12 }}>
+                                                <span style={{ color: 'var(--success)', fontWeight: 800 }}>[ACTION]</span>
+                                                <span style={{ fontWeight: 600 }}>Locate Search Bar</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                                                <span style={{ color: '#ff5f57', fontWeight: 800 }}>[RESULT]</span>
+                                                <span>Exact selector failed</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                                                <span style={{ color: 'var(--warning)', fontWeight: 800 }}>[REASON]</span>
+                                                <span style={{ opacity: 0.8 }}>Dynamic class name change detected</span>
+                                            </div>
                                         </div>
-                                        <div style={{ color: 'var(--success)', marginBottom: 6 }}>
-                                            <span style={{ opacity: 0.5, marginRight: 8 }}>[14:22:05]</span>
-                                            ✔ Opened chat
+
+                                        <div style={{ borderBottom: '1px solid #1a1a1a', padding: '12px 16px', background: 'rgba(234, 179, 8, 0.03)' }}>
+                                            <div style={{ display: 'flex', gap: 12 }}>
+                                                <span style={{ color: 'var(--accent)', fontWeight: 800 }}>[REPAIR]</span>
+                                                <span style={{ fontWeight: 600 }}>Agentic Fallback Search</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                                                <span style={{ color: 'var(--success)', fontWeight: 800 }}>[RESULT]</span>
+                                                <span>Found element via fuzzy text match "Search..."</span>
+                                            </div>
                                         </div>
-                                        <div style={{ color: 'var(--warning)', marginBottom: 6, background: 'rgba(245, 158, 11, 0.05)', padding: '2px 0' }}>
-                                            <span style={{ opacity: 0.5, marginRight: 8 }}>[14:22:08]</span>
-                                            ⚠ Read lead name failed → Retrying regex fallback
-                                        </div>
-                                        <div style={{ color: 'var(--success)', marginBottom: 6 }}>
-                                            <span style={{ opacity: 0.5, marginRight: 8 }}>[14:22:10]</span>
-                                            ✔ Extracted "John Doe"
-                                        </div>
-                                        <div style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                                            <span className="dot-running" style={{ display: 'inline-block', marginRight: 8 }}></span>
-                                            Typing personalized message autonomously...
+
+                                        <div style={{ padding: '12px 16px' }}>
+                                            <div style={{ display: 'flex', gap: 12 }}>
+                                                <span className="dot-running" style={{ display: 'inline-block' }}></span>
+                                                <span style={{ color: 'var(--accent)', fontWeight: 800 }}>[MISSION]</span>
+                                                <span style={{ fontWeight: 600 }}>Autonomous execution in progress...</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -198,26 +234,26 @@ export default function ActiveQueuePage() {
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-surface)' }}>
                                 {/* Status Panel */}
                                 <div style={{ padding: 16, borderBottom: '1px solid var(--border)' }}>
-                                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>AGENT STATUS</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>MISSION PHASE</div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                                         <div style={{ 
                                             width: 8, height: 8, borderRadius: '50%', 
                                             background: activeTask.state === AgentState.COMPLETED ? 'var(--success)' : 
                                                         activeTask.state === AgentState.FAILED ? 'var(--danger)' : 
-                                                        activeTask.state === AgentState.REPAIRING ? 'var(--warning)' : 'var(--info)' 
-                                        }} />
-                                        <div style={{ fontSize: 14, fontWeight: 500 }}>
-                                            {activeTask.state === AgentState.REPAIRING ? 'Repairing Selector...' : activeTask.state}
+                                                        activeTask.state === AgentState.REPAIRING ? 'var(--warning)' : 
+                                                        activeTask.state === AgentState.VALIDATING ? '#28c840' : 'var(--info)' 
+                                        }} className={activeTask.state !== AgentState.COMPLETED && activeTask.state !== AgentState.FAILED ? 'dot-running' : ''} />
+                                        <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>
+                                            {activeTask.state}
                                         </div>
                                     </div>
-                                    <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                                        {activeTask.state === AgentState.REPAIRING 
-                                            ? 'The agent is dynamically fixing a broken locator.' 
-                                            : activeTask.state === AgentState.COMPLETED 
-                                            ? 'Mission goal reached successfully.'
-                                            : activeTask.state === AgentState.FAILED
-                                            ? 'Agent stopped. Review results or patterns.'
-                                            : 'Executing autonomous planning steps.'}
+                                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                        {activeTask.state === AgentState.PLANNING && 'Agent is analyzing goals and mapping browser routes.'}
+                                        {activeTask.state === AgentState.EXECUTING && 'Agent is actively interacting with the page elements.'}
+                                        {activeTask.state === AgentState.REPAIRING && 'A selector failed. The agent is using reasoning to find a fallback.'}
+                                        {activeTask.state === AgentState.VALIDATING && 'Finalizing task and verifying extracted results.'}
+                                        {activeTask.state === AgentState.COMPLETED && 'Mission goal successfully accomplished.'}
+                                        {(activeTask.state !== AgentState.PLANNING && activeTask.state !== AgentState.EXECUTING && activeTask.state !== AgentState.REPAIRING && activeTask.state !== AgentState.VALIDATING && activeTask.state !== AgentState.COMPLETED) && 'Agent is waiting for the next instruction.'}
                                     </div>
                                 </div>
 
@@ -245,13 +281,20 @@ export default function ActiveQueuePage() {
                                         </div>
                                     </div>
 
-                                    <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, border: '1px solid var(--border)' }}>
+                                    <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, border: '1px solid var(--border)', marginBottom: 16 }}>
                                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>CONFIDENCE</div>
                                         <div style={{ fontSize: 13, fontWeight: 500 }}>
                                             {activeTask.confidence ? `${Math.round(activeTask.confidence * 100)}% Match` : 'Analyzing Context...'}
                                         </div>
                                         <div style={{ height: 4, background: 'var(--bg-surface)', borderRadius: 2, marginTop: 8, overflow: 'hidden' }}>
                                             <div style={{ height: '100%', width: `${(activeTask.confidence || 0) * 100}%`, background: 'var(--accent)', transition: 'width 0.3s' }} />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 8, border: '1px solid var(--border)' }}>
+                                        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>LOGIC & REASONING</div>
+                                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                            {activeTask.reasoning || 'Agent is determining the optimal path based on visual cues and DOM structure.'}
                                         </div>
                                     </div>
 
@@ -263,14 +306,28 @@ export default function ActiveQueuePage() {
                         <div style={{ height: '35%', borderTop: '2px solid var(--border)', display: 'flex', background: 'var(--bg-surface)' }}>
                             {/* Results Table/Metrics */}
                             <div style={{ flex: 1.5, borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>RESULTS</span>
+                                <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                                        <span>RESULTS & METRICS</span>
+                                        {activeTask.metrics && (
+                                            <div style={{ display: 'flex', gap: 12, color: 'var(--accent)' }}>
+                                                <span>✓ {activeTask.metrics.success || 0} Success</span>
+                                                <span style={{ color: 'var(--danger)' }}>⚠ {activeTask.metrics.failed || 0} Failed</span>
+                                                <span style={{ color: 'var(--text-muted)' }}>⏭ {activeTask.metrics.skipped || 0} Skipped</span>
+                                            </div>
+                                        )}
+                                    </div>
                                     {(activeTask.state === AgentState.COMPLETED || activeTask.state === AgentState.FAILED) && (
                                         <div style={{ display: 'flex', gap: 8 }}>
                                             <button 
                                                 className="btn btn-secondary btn-sm" 
                                                 style={{ padding: '4px 12px', fontSize: 10, borderRadius: 'var(--radius-pill)', border: '1px solid var(--border)' }}
-                                                onClick={() => navigate('/', { state: { goal: activeTask.prompt } })}
+                                                onClick={() => {
+                                                    const better = window.prompt("What should the agent do better in the next run?");
+                                                    if (better) {
+                                                        navigate('/', { state: { goal: `${activeTask.prompt}\n\nREFINEMENT: ${better}` } });
+                                                    }
+                                                }}
                                             >
                                                 🔁 Improve Goal
                                             </button>
@@ -281,7 +338,6 @@ export default function ActiveQueuePage() {
                                                     await window.electronAPI.runTask({
                                                         prompt: activeTask.prompt,
                                                         url: activeTask.targetUrl || activeTask.domain,
-                                                        // ... other params from activeTask if available
                                                     });
                                                     navigate('/queue');
                                                 }}
@@ -291,29 +347,33 @@ export default function ActiveQueuePage() {
                                         </div>
                                     )}
                                 </div>
-                                <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+                                <div style={{ flex: 1, overflowY: 'auto', padding: 0 }}>
                                     {activeTask.extractedData && activeTask.extractedData.length > 0 ? (
-                                        <table style={{ width: '100%', fontSize: 12 }}>
-                                            <thead>
+                                        <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
+                                            <thead style={{ position: 'sticky', top: 0, background: 'var(--bg-surface)', zIndex: 1, boxShadow: '0 1px 0 var(--border)' }}>
                                                 <tr>
-                                                    <th style={{ textAlign: 'left', padding: 8 }}>Name / Co</th>
-                                                    <th style={{ textAlign: 'left', padding: 8 }}>Email / Contact</th>
-                                                    <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
+                                                    <th style={{ textAlign: 'left', padding: '12px 16px' }}>ENTITY</th>
+                                                    <th style={{ textAlign: 'left', padding: '12px 16px' }}>CONTACT / VALUE</th>
+                                                    <th style={{ textAlign: 'left', padding: '12px 16px' }}>STATUS</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {activeTask.extractedData.map((res: any, idx: number) => (
-                                                    <tr key={idx}>
-                                                        <td style={{ padding: '14px 12px' }}>
-                                                            <div style={{ fontWeight: 600 }}>{res.name || res.company || res.companyName || 'Lead Item'}</div>
-                                                            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>Extracted 2m ago</div>
+                                                    <tr key={idx} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{res.name || res.company || 'Extracted Item'}</div>
                                                         </td>
-                                                        <td style={{ padding: '14px 12px', color: 'var(--accent)', fontWeight: 500 }}>
-                                                            {res.email || res.phone || res.contact || 'No data found'}
+                                                        <td style={{ padding: '12px 16px', color: 'var(--accent)', fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                                                            {res.email || res.phone || res.contact || 'N/A'}
                                                         </td>
-                                                        <td style={{ padding: '14px 12px' }}>
-                                                            <span className={`badge ${res.status === 'success' ? 'badge-success' : 'badge-failed'}`} style={{ fontSize: 10 }}>
-                                                                {res.status || 'Extracted'}
+                                                        <td style={{ padding: '12px 16px' }}>
+                                                            <span style={{ 
+                                                                fontSize: 10, padding: '4px 8px', borderRadius: 4, 
+                                                                background: res.status === 'success' ? 'rgba(40, 200, 64, 0.1)' : 'rgba(255, 95, 87, 0.1)',
+                                                                color: res.status === 'success' ? '#28c840' : '#ff5f57',
+                                                                fontWeight: 700
+                                                            }}>
+                                                                {(res.status || 'SUCCESS').toUpperCase()}
                                                             </span>
                                                         </td>
                                                     </tr>
@@ -321,25 +381,54 @@ export default function ActiveQueuePage() {
                                             </tbody>
                                         </table>
                                     ) : (
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: 12, textAlign: 'center' }}>
-                                            No results collected yet.<br/>The agent is currently exploring and planning.
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 40 }}>
+                                            <div style={{ maxWidth: 300 }}>
+                                                <div style={{ fontSize: 32, marginBottom: 16 }}>📡</div>
+                                                Waiting for the agent to extract the first set of results...
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Learned Pattern (JSON) */}
+                             {/* Learned Pattern (JSON) */}
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>
-                                    LEARNED PATTERN (JSON)
+                                <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span>LEARNED PATTERN</span>
+                                    <button 
+                                        className="btn btn-secondary btn-sm" 
+                                        style={{ padding: '2px 8px', fontSize: 9 }}
+                                        onClick={() => {
+                                            if (activeTask.learnedPattern) {
+                                                navigator.clipboard.writeText(JSON.stringify(activeTask.learnedPattern, null, 2));
+                                                alert('Pattern copied to clipboard!');
+                                            }
+                                        }}
+                                    >
+                                        📋 Copy JSON
+                                    </button>
                                 </div>
                                 <div style={{ flex: 1, padding: 12, overflow: 'hidden' }}>
-                                    <pre style={{ 
+                                    <div style={{ 
                                         margin: 0, padding: 12, background: 'var(--bg-base)', borderRadius: 8, height: '100%', overflowY: 'auto',
-                                        fontSize: 11, color: 'var(--info)', fontFamily: 'var(--font-mono)', border: '1px solid var(--border)'
+                                        fontSize: 11, color: '#eab308', fontFamily: 'var(--font-mono)', border: '1px solid var(--border)',
+                                        whiteSpace: 'pre-wrap', lineHeight: 1.5
                                     }}>
-                                        {activeTask.learnedPattern ? JSON.stringify(activeTask.learnedPattern, null, 2) : '// Searching for stable structure...'}
-                                    </pre>
+                                        {activeTask.learnedPattern ? (
+                                            <div style={{ color: '#8b5cf6' }}>
+                                                <span style={{ color: '#6366f1' }}>"actions"</span>: [...],<br/>
+                                                <span style={{ color: '#6366f1' }}>"strategies"</span>: &#123;<br/>
+                                                &nbsp;&nbsp;<span style={{ color: '#ec4899' }}>"exact"</span>: <span style={{ color: '#10b981' }}>true</span>,<br/>
+                                                &nbsp;&nbsp;<span style={{ color: '#ec4899' }}>"fallback"</span>: <span style={{ color: '#f59e0b' }}>"text_match"</span><br/>
+                                                &#125;,<br/>
+                                                <span style={{ color: '#6366f1' }}>"template"</span>: <span style={{ color: '#10b981' }}>"Hi &#123;&#123;name&#125;&#125;..."</span>
+                                            </div>
+                                        ) : (
+                                            <div style={{ color: 'var(--text-muted)', border: '1px dashed var(--border)', padding: 12, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                                                Searching for stable<br/>DOM structure...
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>

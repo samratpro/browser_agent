@@ -16,6 +16,7 @@ export enum AgentState {
     COMPLETED = 'COMPLETED',
     FAILED = 'FAILED',
     REPAIRING = 'REPAIRING',
+    VALIDATING = 'VALIDATING',
 }
 
 // ─── Intent Classification ───────────────────────────────────
@@ -110,15 +111,25 @@ export interface TaskCredentials {
     twoFactorCode?: string;
 }
 
+export interface TaskMetrics {
+    processed?: number;
+    success?: number;
+    skipped?: number;
+    failed?: number;
+    sent?: number; // for messaging
+}
+
 export interface Task {
     id: string;
     name: string;
     domain: string;
     prompt: string;
+    type?: 'scraping' | 'messaging' | 'testing';
     intent?: TaskIntent;
     credentials?: TaskCredentials;
     state: AgentState;
     progress: number; // 0–100
+    metrics?: TaskMetrics;
     patternId?: string;
     executionGraph?: ExecutionGraph;
     extractedData?: Record<string, any>[]; // Replaces results in plan
@@ -127,6 +138,7 @@ export interface Task {
     currentSelector?: string;
     confidence?: number;
     learnedPattern?: any;
+    reasoning?: string;
     targetUrl?: string; // Explicitly for display
     trained?: boolean;
     errorMessage?: string;

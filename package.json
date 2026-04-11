@@ -19,6 +19,7 @@
         "openai": "^4.47.1",
         "playwright": "^1.44.0",
         "sql.js": "^1.14.0",
+        "ts_playwright_browser_manager": "github:samratpro/ts_playwright_browser_manager",
         "uuid": "^10.0.0"
     },
     "devDependencies": {

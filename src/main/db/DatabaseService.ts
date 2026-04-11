@@ -228,6 +228,18 @@ export class DatabaseService {
       this.run('INSERT OR REPLACE INTO kv_store (key, value) VALUES (?, ?)', [key, value]);
     }
   }
+
+  // ── Port Management ──────────────────────────────────────
+
+  getNextDebugPort(): number {
+    const KEY = 'last_debug_port';
+    const firstPort = 9100; // Lower start so 9222+ are safe
+    const lastPortVal = this.kvGet(KEY);
+    const current = lastPortVal ? parseInt(lastPortVal) : firstPort;
+    const next = current + 1;
+    this.kvSet(KEY, next.toString());
+    return next;
+  }
 }
 
 // ─── Module-level init helpers ────────────────────────────────
