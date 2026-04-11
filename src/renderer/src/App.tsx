@@ -3,16 +3,14 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import AppLayout from './components/AppLayout';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
+import MissionControlPage from './pages/MissionControlPage';
+import ActiveQueuePage from './pages/ActiveQueuePage';
 import TasksPage from './pages/TasksPage';
 import TaskDetailView from './pages/TaskDetailView';
 import PatternsPage from './pages/PatternsPage';
 import SchedulerPage from './pages/SchedulerPage';
 import LogsPage from './pages/LogsPage';
 import SettingsPage from './pages/SettingsPage';
-
-import TrainTaskPage from './pages/TrainTaskPage';
-import RunningTasksPage from './pages/RunningTasksPage';
 
 // ─── Auth Guard ───────────────────────────────────────────────
 
@@ -37,11 +35,10 @@ function AppRoutes() {
                     <AppLayout />
                 </AuthGuard>
             }>
-                <Route index element={<DashboardPage />} />
-                <Route path="train" element={<TrainTaskPage />} />
+                <Route index element={<MissionControlPage />} />
+                <Route path="active" element={<ActiveQueuePage />} />
                 <Route path="tasks" element={<TasksPage />} />
                 <Route path="tasks/:taskId" element={<TaskDetailView />} />
-                <Route path="running" element={<RunningTasksPage />} />
                 <Route path="patterns" element={<PatternsPage />} />
                 <Route path="scheduler" element={<SchedulerPage />} />
                 <Route path="logs" element={<LogsPage />} />

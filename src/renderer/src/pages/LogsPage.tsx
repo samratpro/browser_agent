@@ -71,37 +71,45 @@ export default function LogsPage() {
 
             {/* Filters */}
             <div className="card" style={{ marginBottom: 20 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto', gap: 10, alignItems: 'end' }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">Search</label>
-                        <input className="form-input" placeholder="Filter log messages..." value={filter} onChange={(e) => setFilter(e.target.value)} />
+                <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ marginBottom: 0, flex: 1, minWidth: 200 }}>
+                        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                            <span style={{ position: 'absolute', left: 12, color: 'var(--text-muted)' }}>🔍</span>
+                            <input 
+                                className="form-input" 
+                                style={{ paddingLeft: 34 }}
+                                placeholder="Filter log messages..." 
+                                value={filter} 
+                                onChange={(e) => setFilter(e.target.value)} 
+                            />
+                        </div>
                     </div>
-                    <div className="form-group" style={{ marginBottom: 0, minWidth: 120 }}>
-                        <label className="form-label">Task</label>
-                        <select className="form-select" value={taskFilter} onChange={(e) => setTaskFilter(e.target.value)}>
-                            <option value="all">All Tasks</option>
-                            {tasks.map((t) => (
-                                <option key={t.id} value={t.id}>{t.name.slice(0, 30)}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0, minWidth: 100 }}>
-                        <label className="form-label">Level</label>
-                        <select className="form-select" value={level} onChange={(e) => setLevel(e.target.value as LogLevel | 'all')}>
-                            <option value="all">All</option>
-                            {LEVELS.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
-                        </select>
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label">Auto-scroll</label>
-                        <label className="toggle" style={{ paddingTop: 10 }}>
-                            <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />
-                            <div className="toggle-track"><div className="toggle-thumb" /></div>
-                        </label>
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label" style={{ opacity: 0 }}>.</label>
-                        <button className="btn btn-secondary btn-sm" onClick={() => { setFilter(''); setLevel('all'); }}>↺ Clear</button>
+                    
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <div className="form-group" style={{ marginBottom: 0, minWidth: 160 }}>
+                            <select className="form-select" value={taskFilter} onChange={(e) => setTaskFilter(e.target.value)}>
+                                <option value="all">All Tasks</option>
+                                {tasks.map((t) => (
+                                    <option key={t.id} value={t.id}>{t.name.slice(0, 30)}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0, minWidth: 120 }}>
+                            <select className="form-select" value={level} onChange={(e) => setLevel(e.target.value as LogLevel | 'all')}>
+                                <option value="all">Level: All</option>
+                                {LEVELS.map((l) => <option key={l} value={l}>{l.toUpperCase()}</option>)}
+                            </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Auto-scroll</span>
+                            <label className="toggle">
+                                <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />
+                                <div className="toggle-track"><div className="toggle-thumb" /></div>
+                            </label>
+                        </div>
+                        <button className="btn btn-secondary btn-sm" onClick={() => { setFilter(''); setLevel('all'); }} style={{ height: 38 }}>
+                            ↺ Clear
+                        </button>
                     </div>
                 </div>
             </div>

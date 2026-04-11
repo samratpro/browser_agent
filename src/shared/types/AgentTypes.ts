@@ -15,6 +15,7 @@ export enum AgentState {
     PAUSED = 'PAUSED',
     COMPLETED = 'COMPLETED',
     FAILED = 'FAILED',
+    REPAIRING = 'REPAIRING',
 }
 
 // ─── Intent Classification ───────────────────────────────────
@@ -120,7 +121,14 @@ export interface Task {
     progress: number; // 0–100
     patternId?: string;
     executionGraph?: ExecutionGraph;
-    extractedData?: Record<string, unknown>[];
+    extractedData?: Record<string, any>[]; // Replaces results in plan
+    pageType?: 'home' | 'list' | 'detail' | 'external' | 'form';
+    strategy?: 'exact' | 'fuzzy' | 'text' | 'regex' | 'auto';
+    currentSelector?: string;
+    confidence?: number;
+    learnedPattern?: any;
+    targetUrl?: string; // Explicitly for display
+    trained?: boolean;
     errorMessage?: string;
     scheduleId?: string;
     startedAt?: number;

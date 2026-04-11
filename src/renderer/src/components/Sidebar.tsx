@@ -11,12 +11,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { path: '/', icon: '⊞', label: 'Dashboard' },
-    { path: '/train', icon: '🧠', label: 'Train Task' },
-    { path: '/tasks', icon: '📋', label: 'Train Task List' },
+    { path: '/', icon: '🧠', label: 'New Task' },
+    { path: '/active', icon: '▶', label: 'Active Queue' },
+    { path: '/tasks', icon: '📋', label: 'Task Library' },
     { path: '/patterns', icon: '◈', label: 'Patterns' },
-    { path: '/scheduler', icon: '⏰', label: 'Run Task' },
-    { path: '/running', icon: '▶', label: 'Running Tasks' },
+    { path: '/scheduler', icon: '⏰', label: 'Scheduler' },
     { path: '/logs', icon: '≡', label: 'Logs' },
     { path: '/settings', icon: '⚙', label: 'Settings' },
 ];
@@ -82,20 +81,43 @@ export default function Sidebar({ collapsed, onToggle }: {
 
                 {/* Task List */}
                 {tasks.length > 0 && (
-                    <div className="sidebar-task-section">
+                    <div style={{ padding: '16px 8px', marginTop: 8, borderTop: '1px solid var(--border)' }}>
                         {!collapsed && (
-                            <div className="sidebar-task-header">RECENT TASKS</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8, paddingLeft: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                RECENT TASKS
+                            </div>
                         )}
                         {tasks.map((task) => (
                             <button
                                 key={task.id}
-                                className="sidebar-task-item"
                                 onClick={() => navigate(`/tasks/${task.id}`)}
                                 title={task.name}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 10,
+                                    width: '100%', padding: '8px 10px',
+                                    background: 'transparent', border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer', color: 'var(--text-secondary)',
+                                    textAlign: 'left'
+                                }}
+                                onMouseOver={(e) => {
+                                    e.currentTarget.style.background = 'var(--bg-hover)';
+                                    e.currentTarget.style.color = 'var(--text-primary)';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--text-secondary)';
+                                }}
                             >
-                                <span className={`task-status-dot ${taskStateDot(task.state)}`} />
+                                <span className={`task-status-dot ${taskStateDot(task.state)}`} style={{ 
+                                    width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                                    background: task.state === AgentState.COMPLETED ? 'var(--success)' : 
+                                                task.state === AgentState.FAILED ? 'var(--danger)' : 'var(--info)'
+                                }} />
                                 {!collapsed && (
-                                    <span className="sidebar-task-name">{task.name}</span>
+                                    <span style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {task.name}
+                                    </span>
                                 )}
                             </button>
                         ))}

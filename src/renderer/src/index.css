@@ -23,51 +23,50 @@ html {
 /* ─── Design Tokens — Dark Mode (default) ────────────────────── */
 :root,
 [data-theme="dark"] {
-  --bg-base: #0d0f18;
-  --bg-surface: #131620;
-  --bg-elevated: #1a1d2e;
-  --bg-hover: #20243a;
-  --bg-active: #252a42;
-  --bg-glass: rgba(26, 29, 46, 0.85);
+  --bg-base: #06080f;
+  --bg-surface: #0c0e1a;
+  --bg-elevated: #151828;
+  --bg-hover: #1e2238;
+  --bg-active: #282d4a;
+  --bg-glass: rgba(12, 14, 26, 0.7);
 
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.1);
 
-  --text-primary: #f0f2f8;
-  --text-secondary: #8890b0;
-  --text-muted: #4e5470;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
 
-  --accent: #6c63ff;
-  --accent-hover: #7c74ff;
-  --accent-dim: rgba(108, 99, 255, 0.15);
-  --accent-glow: rgba(108, 99, 255, 0.35);
+  --accent: #6366f1; /* Indigo vibrant */
+  --accent-hover: #818cf8;
+  --accent-dim: rgba(99, 102, 241, 0.12);
+  --accent-glow: rgba(99, 102, 241, 0.3);
 
-  --success: #22c55e;
-  --success-dim: rgba(34, 197, 94, 0.12);
+  --success: #10b981;
+  --success-dim: rgba(16, 185, 129, 0.1);
   --warning: #f59e0b;
-  --warning-dim: rgba(245, 158, 11, 0.12);
+  --warning-dim: rgba(245, 158, 11, 0.1);
   --danger: #ef4444;
-  --danger-dim: rgba(239, 68, 68, 0.12);
-  --info: #38bdf8;
-  --info-dim: rgba(56, 189, 248, 0.12);
+  --danger-dim: rgba(239, 68, 68, 0.1);
+  --info: #0ea5e9;
+  --info-dim: rgba(14, 165, 233, 0.1);
 
-  --sidebar-width: 220px;
-  --sidebar-collapsed: 60px;
-  --titlebar-height: 38px;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --sidebar-width: 240px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  --radius-pill: 100px;
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.55);
-  --shadow-glow: 0 0 20px var(--accent-glow);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 15px var(--accent-glow);
 
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-
-  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 /* ─── Light Mode Overrides ───────────────────────────────────── */
@@ -345,8 +344,21 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 24px;
   box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-md);
+}
+
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-strong);
 }
 
 .card-header {
@@ -535,8 +547,8 @@ td {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 18px;
-  border-radius: var(--radius-md);
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
   font-size: 13px;
   font-weight: 600;
   font-family: var(--font-sans);
@@ -629,7 +641,7 @@ td {
 .form-textarea {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   color: var(--text-primary);
   font-family: var(--font-sans);
   font-size: 13px;
